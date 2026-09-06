@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# local state, never commit
+data/
+runs/
+config/profile.yaml
+config/config.yaml
+config/boards.verified.yaml
+chrome-profile/
+*.db

@@ -1,0 +1,116 @@
+# Company job boards to poll, grouped by which ATS hosts them.
+#
+# IMPORTANT: this is a starting list, not a verified one. Board tokens change,
+# companies switch ATS, and some of these will be wrong on any given day. Run
+#
+#     python -m jobagent verify-boards
+#
+# which pings every token and writes the live ones to boards.verified.yaml. That
+# file takes precedence once it exists. Rerun it monthly.
+#
+# To add a company: open its careers page and read the url.
+#   job-boards.greenhouse.io/TOKEN  or boards.greenhouse.io/TOKEN  -> greenhouse
+#   jobs.lever.co/TOKEN                                            -> lever
+#   jobs.ashbyhq.com/TOKEN                                         -> ashby
+#   jobs.smartrecruiters.com/TOKEN                                 -> smartrecruiters
+# Anything on myworkdayjobs.com or icims.com has no open api. Put those postings
+# in config/manual_urls.txt instead.
+
+greenhouse:
+  - airtable
+  - anthropic
+  - asana
+  - benchling
+  - betterment
+  - brex
+  - chime
+  - cloudflare
+  - coinbase
+  - databricks
+  - datadog
+  - discord
+  - doordash
+  - dropbox
+  - duolingo
+  - figma
+  - flexport
+  - gitlab
+  - grammarly
+  - gusto
+  - hashicorp
+  - instacart
+  - intercom
+  - lyft
+  - mongodb
+  - motive
+  - navan
+  - notion
+  - nuro
+  - okta
+  - opendoor
+  - pinterest
+  - plaid
+  - reddit
+  - robinhood
+  - roblox
+  - samsara
+  - scaleai
+  - sentry
+  - snowflake
+  - sofi
+  - square
+  - stripe
+  - twilio
+  - unity
+  - vercel
+  - webflow
+  - wealthfront
+  - zapier
+
+lever:
+  - affirm
+  - attentive
+  - benchling
+  - clearcover
+  - figma
+  - fivetran
+  - kraken
+  - lattice
+  - matterport
+  - mercury
+  - netflix
+  - nerdwallet
+  - palantir
+  - plaid
+  - rippling
+  - shipbob
+  - sightglass
+  - vimeo
+
+ashby:
+  - anysphere
+  - clay
+  - cohere
+  - deel
+  - discord
+  - hex
+  - linear
+  - loom
+  - notion
+  - openai
+  - perplexity-ai
+  - posthog
+  - ramp
+  - replit
+  - retool
+  - runway
+  - scale
+  - sierra
+  - vanta
+  - warp
+
+smartrecruiters:
+  - Visa
+  - Bosch
+  - Ubisoft
+  - McDonalds

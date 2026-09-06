@@ -1,0 +1,59 @@
+# Copy to profile.yaml and fill it in. This file stays on your machine and is
+# gitignored. Every value here can end up in a job application, so it should be
+# exactly what you would type yourself.
+
+resume_file: "~/Documents/resume.pdf"   # pdf, docx, txt or md
+
+identity:
+  full_name: "FILL_ME"
+  first_name: ""            # leave blank to split full_name
+  last_name: ""
+  preferred_name: ""
+  pronouns: ""              # optional, only filled if a form asks
+  email: "FILL_ME"
+  phone: "FILL_ME"
+  city: ""
+  state: ""
+  postal_code: ""
+  country: "United States"
+  street_address: ""
+  location: ""              # free text, eg "Austin, TX"
+  linkedin: ""
+  github: ""
+  website: ""
+  twitter: ""
+
+eligibility:
+  # These two sink more applications than anything else on the form.
+  work_authorization: "FILL_ME"      # eg "US citizen", "Green card", "H1B", "F1 OPT"
+  authorized_to_work: true           # authorized to work in the US without restriction
+  requires_sponsorship: "FILL_ME"    # true or false. Now or in the future.
+  security_clearance: false
+  previously_employed_here: false
+  non_compete: false
+
+preferences:
+  years_pm: 0
+  years_total: 0
+  target_levels: ["Product Manager", "Senior Product Manager"]
+  domains_strong: []        # eg ["B2B SaaS", "payments", "developer tools"]
+  domains_interested: []    # want to move into, but have not shipped in yet
+  company_sizes: []         # eg ["series B", "series C", "growth", "public"]
+  dealbreakers: []          # eg ["gambling", "defense"]
+  work_mode: "remote or hybrid"
+  relocation: false
+  onsite_ok: true
+  min_base_salary: 0        # used for scoring only
+  salary_answer: ""         # what to type when a form demands a number, eg "180000"
+  start_date: "Two weeks from offer"
+
+# Answered exactly as written, never guessed. "Decline to self identify" is a
+# complete and normal answer to all four.
+eeo:
+  gender: "Decline to self identify"
+  race: "Decline to self identify"
+  veteran_status: "I do not wish to answer"
+  disability_status: "I do not wish to answer"
+
+standard_answers:
+  how_did_you_hear: "Company website"

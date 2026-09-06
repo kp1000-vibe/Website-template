@@ -1,0 +1,47 @@
+# Copy to config.yaml and edit. Nothing here is secret.
+
+search:
+  max_age_days: 3          # only postings this fresh
+  daily_target: 5          # ceiling, not a quota. Fewer good ones means fewer.
+  min_score: 70            # 0 to 100, see the scoring guide in jobagent/scoring.py
+  remote_only: false
+  max_per_company_per_day: 1
+
+  # Metros you would work in. Remote US roles are allowed regardless.
+  locations_allow:
+    - "San Francisco"
+    - "New York"
+    - "Seattle"
+    - "Austin"
+    - "Boston"
+    - "Remote"
+
+  # Companies you never want to see. Substring match on the company name.
+  companies_block: []
+
+  # Leave empty to use the built in product management title patterns in
+  # jobagent/filters.py. Anything you put here replaces them entirely.
+  titles_include: []
+  titles_exclude: []
+
+llm:
+  model: claude-opus-5
+  max_scored_per_run: 80   # cap so a bad day cannot run up a bill
+
+documents:
+  cover_letter: true
+  screening_answers: true
+  tailoring_notes: true
+  questions:
+    - "Why do you want to work at this company?"
+    - "Why are you a good fit for this specific role?"
+    - "Describe a product you shipped and the outcome it drove."
+
+browser:
+  cdp_port: 9222
+  profile_dir: "~/.jobagent/chrome-profile"
+  chrome_binary: null      # set only if Chrome is somewhere unusual
+  never_submit: true       # the agent fills forms and stops. Do not change this.
+
+review:
+  port: 8765

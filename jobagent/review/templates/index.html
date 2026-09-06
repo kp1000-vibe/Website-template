@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jobagent review</title>
+<style>
+  :root {
+    --bg: #f6f6f4; --card: #fff; --ink: #1a1a19; --muted: #6b6b66;
+    --line: #e3e3df; --accent: #2b5cff; --good: #0f7b4f; --warn: #a35a00; --bad: #a32020;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#151513; --card:#1e1e1c; --ink:#eceae4; --muted:#9a9a92;
+            --line:#33332f; --accent:#7a9bff; --good:#4fc08a; --warn:#e0a04a; --bad:#e07a7a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:15px/1.5 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding:24px 28px 12px; }
+  h1 { font-size:20px; margin:0 0 4px; letter-spacing:-0.01em; }
+  .counts { color:var(--muted); font-size:13px; }
+  main { padding:12px 28px 60px; max-width:1100px; }
+  .job { background:var(--card); border:1px solid var(--line); border-radius:10px;
+         padding:18px 20px; margin-bottom:14px; }
+  .top { display:flex; gap:14px; align-items:baseline; flex-wrap:wrap; }
+  .score { font-size:26px; font-weight:600; min-width:52px; letter-spacing:-0.02em; }
+  .s-hi { color:var(--good); } .s-mid { color:var(--warn); } .s-lo { color:var(--muted); }
+  .title { font-size:16px; font-weight:600; }
+  .company { color:var(--muted); }
+  .meta { color:var(--muted); font-size:13px; margin:6px 0 10px; }
+  .pitch { margin:8px 0 12px; }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:10px 0; }
+  @media (max-width:720px) { .cols { grid-template-columns:1fr; } }
+  .cols h4 { margin:0 0 4px; font-size:12px; text-transform:uppercase;
+             letter-spacing:.06em; color:var(--muted); font-weight:600; }
+  ul { margin:0; padding-left:18px; } li { margin:2px 0; }
+  .flags li { color:var(--bad); }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;
+             padding-top:14px; border-top:1px solid var(--line); }
+  button, .btn { font:inherit; font-size:13px; padding:7px 13px; border-radius:7px;
+                 border:1px solid var(--line); background:transparent; color:var(--ink);
+                 cursor:pointer; text-decoration:none; display:inline-block; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button:hover, .btn:hover { border-color:var(--accent); }
+  .files a { font-size:13px; margin-right:12px; color:var(--accent); }
+  .status { font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+            padding:2px 8px; border-radius:20px; border:1px solid var(--line); color:var(--muted); }
+  .report { font-size:13px; color:var(--muted); margin-top:10px; }
+  .report b { color:var(--ink); font-weight:600; }
+  .empty { color:var(--muted); padding:40px 0; }
+  details summary { cursor:pointer; color:var(--muted); font-size:13px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  td { padding:5px 8px 5px 0; border-bottom:1px solid var(--line); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Today's shortlist</h1>
+  <div class="counts">
+    {{ counts.get('jobs', 0) }} postings seen &middot;
+    {{ counts.get('scored', 0) }} scored &middot;
+    target {{ cfg.daily_target }} a day &middot;
+    minimum score {{ cfg.min_score }}
+  </div>
+</header>
+<main>
+{% if not jobs %}
+  <p class="empty">Nothing queued. Run <code>python -m jobagent run</code> to pull today's postings.</p>
+{% endif %}
+
+{% for job in jobs %}
+  <article class="job">
+    <div class="top">
+      <span class="score {{ 's-hi' if job.score and job.score >= 80 else ('s-mid' if job.score and job.score >= 65 else 's-lo') }}">
+        {{ job.score if job.score is not none else '--' }}
+      </span>
+      <div>
+        <div class="title">{{ job.title }}</div>
+        <div class="company">{{ job.company }}</div>
+      </div>
+      <span class="status" style="margin-left:auto">{{ job.status }}</span>
+    </div>
+
+    <div class="meta">
+      {{ job.location or 'location not stated' }}
+      {% if job.posted_at %} &middot; posted {{ job.posted_at[:10] }}{% endif %}
+      {% if job.ats %} &middot; {{ job.ats }}{% endif %}
+      {% if job.seniority_match %} &middot; level {{ job.seniority_match }}{% endif %}
+    </div>
+
+    {% if job.pitch %}<div class="pitch">{{ job.pitch }}</div>{% endif %}
+
+    <div class="cols">
+      <div>
+        <h4>Why you fit</h4>
+        <ul>{% for s in job.strengths %}<li>{{ s }}</li>{% else %}<li>none listed</li>{% endfor %}</ul>
+      </div>
+      <div>
+        <h4>Gaps</h4>
+        <ul>{% for g in job.gaps %}<li>{{ g }}</li>{% else %}<li>none listed</li>{% endfor %}</ul>
+      </div>
+    </div>
+
+    {% if job.red_flags %}
+      <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Red flags</h4>
+      <ul class="flags">{% for f in job.red_flags %}<li>{{ f }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    {% if job.artifacts %}
+      <div class="files" style="margin-top:12px">
+        {% for label, path in job.artifacts.items() %}
+          <a href="/artifact?path={{ path | urlencode }}" target="_blank">{{ label.replace('_', ' ') }}</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if job.fill_report %}
+      <div class="report">
+        <b>{{ job.fill_report.filled | length }}</b> fields filled.
+        {% if job.fill_report.required_empty %}
+          <b>{{ job.fill_report.required_empty | length }}</b> required fields still need you:
+          {{ job.fill_report.required_empty | map(attribute='label') | join('; ') | truncate(220) }}
+        {% endif %}
+        {% if job.fill_report.error %}<br>Error: {{ job.fill_report.error }}{% endif %}
+        <details style="margin-top:6px">
+          <summary>what it filled</summary>
+          <table>
+          {% for f in job.fill_report.filled %}
+            <tr><td style="color:var(--muted);width:45%">{{ f.label | truncate(70) }}</td><td>{{ f.value | truncate(70) }}</td></tr>
+          {% endfor %}
+          </table>
+        </details>
+      </div>
+    {% endif %}
+
+    <div class="actions">
+      <a class="btn" href="{{ job.url }}" target="_blank">Open posting</a>
+      <form method="post" action="/prefill/{{ job.id }}" style="display:inline">
+        <button class="primary" type="submit">Prefill in Chrome</button>
+      </form>
+      <form method="post" action="/status/{{ job.id }}/applied" style="display:inline">
+        <button type="submit">I submitted it</button>
+      </form>
+      <form method="post" action="/status/{{ job.id }}/skipped" style="display:inline">
+        <button type="submit">Skip</button>
+      </form>
+    </div>
+  </article>
+{% endfor %}
+
+{% if closed %}
+  <details style="margin-top:30px">
+    <summary>{{ closed | length }} closed recently</summary>
+    <table>
+      {% for job in closed %}
+        <tr>
+          <td style="width:60px">{{ job.score }}</td>
+          <td>{{ job.title }}</td>
+          <td style="color:var(--muted)">{{ job.company }}</td>
+          <td style="color:var(--muted);width:90px">{{ job.status }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  </details>
+{% endif %}
+</main>
+</body>
+</html>

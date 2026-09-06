@@ -1,0 +1,6 @@
+# One job url per line. Anything you found yourself: LinkedIn, a Workday portal,
+# a company careers page we do not poll. These get scored and prefilled like the
+# rest, and are always treated as fresh.
+#
+# https://www.linkedin.com/jobs/view/1234567890/
+# https://company.wd1.myworkdayjobs.com/en-US/careers/job/Senior-Product-Manager_R-1234
