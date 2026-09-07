@@ -31,20 +31,28 @@ day you get two, and two good applications beat five bad ones.
 ## Setup
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-playwright install chromium        # only needed if Chrome is not already installed
-
-cp config/config.example.yaml config/config.yaml
-cp config/profile.example.yaml config/profile.yaml
-cp config/manual_urls.txt.example config/manual_urls.txt
-$EDITOR config/profile.yaml        # this is the important one
-
-export ANTHROPIC_API_KEY=sk-ant-...   # or run `ant auth login`
-
-python -m jobagent doctor          # tells you exactly what is still missing
-python -m jobagent verify-boards   # prunes dead company boards, takes a minute
+./setup.sh
 ```
+
+That creates the virtual environment, installs everything, copies the config
+templates if you do not already have them, and finishes by running `doctor`,
+which lists exactly what is still missing. It is safe to re-run and it never
+overwrites a config you have edited.
+
+Then, in order:
+
+```bash
+$EDITOR config/profile.yaml            # your details and your resume path
+export ANTHROPIC_API_KEY=sk-ant-...    # or run `ant auth login`
+
+./.venv/bin/python -m jobagent verify-boards   # prunes dead company boards
+./.venv/bin/python -m jobagent chrome          # log in once, leave it open
+./.venv/bin/python -m jobagent run
+./.venv/bin/python -m jobagent review          # http://127.0.0.1:8765
+```
+
+Activate the environment with `source .venv/bin/activate` if you would rather
+type `python -m jobagent ...` without the path prefix.
 
 `config/profile.yaml` is gitignored and stays on your machine. Fill it carefully.
 Two fields decide more applications than anything else you write:
