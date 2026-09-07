@@ -85,3 +85,42 @@ def test_seniority_gate():
     assert not seniority_ok("Associate Product Manager", allow)
     assert not seniority_ok("VP of Product", allow)
     assert not seniority_ok("Chief Product Officer", allow)
+
+
+def test_postings_that_refuse_to_sponsor_are_dropped():
+    from jobagent.filters import sponsorship_ok
+
+    refusals = [
+        "We are unable to provide visa sponsorship for this role.",
+        "This position does not offer immigration sponsorship.",
+        "No visa sponsorship is available.",
+        "Sponsorship is not available for this opening.",
+        "This role is not eligible for employment sponsorship.",
+        "Candidates must be authorized to work in the US without sponsorship.",
+        "You must be able to work in the United States without sponsorship now or in the future.",
+        "Must be a US citizen.",
+        "US citizenship is required for this position.",
+    ]
+    for text in refusals:
+        assert not sponsorship_ok(job(description=text), True), text
+
+
+def test_postings_that_do_sponsor_survive():
+    from jobagent.filters import sponsorship_ok
+
+    fine = [
+        "We are happy to sponsor visas for the right candidate.",
+        "Visa sponsorship available.",
+        "We sponsor H1B transfers and green cards.",
+        "Own the billing platform end to end.",
+        "We provide relocation support and immigration sponsorship.",
+    ]
+    for text in fine:
+        assert sponsorship_ok(job(description=text), True), text
+
+
+def test_the_sponsorship_filter_is_off_when_you_do_not_need_one():
+    from jobagent.filters import sponsorship_ok
+
+    posting = job(description="We are unable to provide visa sponsorship.")
+    assert sponsorship_ok(posting, False)

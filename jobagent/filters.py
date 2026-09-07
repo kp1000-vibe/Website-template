@@ -100,6 +100,38 @@ NON_US = re.compile(
 )
 
 
+# Postings that rule out a candidate who needs an H1B transfer. Only the negative
+# phrasings, so "we are happy to sponsor" and "sponsorship available" pass through.
+NO_SPONSORSHIP = [
+    re.compile(p, re.I) for p in [
+        r"\b(?:are\s+)?(?:un(?:able|willing)|not able|cannot|can not|can't)\s+to\s+(?:provide|offer|support|sponsor)\b[^.]{0,40}(?:sponsor|visa|immigration)?",
+        r"\b(?:do|does|will|would|can)\s+not\s+(?:provide|offer|support|sponsor)\b[^.]{0,40}(?:sponsor|visa|immigration)",
+        r"\bno\s+(?:visa\s+|immigration\s+|employment\s+)?sponsorship\b",
+        r"\bsponsorship\s+is\s+not\s+(?:available|offered|provided|possible)\b",
+        r"\bnot\s+eligible\s+for\s+[^.]{0,30}sponsorship\b",
+        r"\bwithout\s+(?:the\s+need\s+for\s+)?(?:current\s+or\s+future\s+)?(?:visa\s+|immigration\s+|employer\s+)?sponsorship\b",
+        r"\bwithout\s+(?:requiring\s+)?sponsorship\b",
+        r"\bmust\s+be\s+(?:legally\s+)?authorized[^.]{0,60}without[^.]{0,20}sponsorship\b",
+        r"\bmust\s+be\s+a\s+(?:u\.?s\.?|united states)\s+citizen\b",
+        r"\b(?:u\.?s\.?|united states)\s+citizenship\s+(?:is\s+)?(?:required|mandatory)\b",
+        r"\bcitizens?\s+only\b",
+        r"\bmust\s+be\s+a\s+u\.?s\.?\s+person\b",
+    ]
+]
+
+
+def sponsorship_ok(job: Job, requires_sponsorship) -> bool:
+    """False when the posting itself says it will not sponsor.
+
+    Only applied when you actually need sponsorship. Reading a rejection out of
+    the description up front is far cheaper than scoring it and then applying.
+    """
+    if not requires_sponsorship:
+        return True
+    blob = f"{job.title}\n{job.description}"
+    return not any(p.search(blob) for p in NO_SPONSORSHIP)
+
+
 def _compile(patterns: list[str]) -> list[re.Pattern]:
     return [re.compile(p, re.I) for p in patterns]
 
@@ -179,5 +211,7 @@ def prefilter(jobs, cfg, title_filter: TitleFilter, now=None):
             yield job, "location"
         elif len(job.description) < 200:
             yield job, "no description"
+        elif not sponsorship_ok(job, cfg.profile.eligibility.get("requires_sponsorship")):
+            yield job, "will not sponsor"
         else:
             yield job, None

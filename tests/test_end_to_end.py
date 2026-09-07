@@ -172,3 +172,38 @@ def test_artifact_route_refuses_paths_outside_runs(wired, tmp_path):
     secret = tmp_path / "secret.txt"
     secret.write_text("nope")
     assert client.get(f"/artifact?path={secret}").status_code == 404
+
+
+def test_queue_drops_only_flags_that_shut_the_door(wired):
+    """A candidate who needs sponsorship must not have their queue emptied by
+    red flags that merely mention the word."""
+    from jobagent.models import Fit
+
+    cfg, store = wired
+    store.upsert_jobs(sample_jobs()[:1])
+    job_id = store.known_ids().pop()
+    store.save_fit(Fit(job_id=job_id, score=90, verdict="strong", pitch="p",
+                       red_flags=["Candidate will need H1B sponsorship"]))
+    assert pipeline.stage_queue(cfg, store)["queued"] == 1
+
+
+def test_queue_drops_a_posting_that_will_not_sponsor(wired):
+    from jobagent.models import Fit
+
+    cfg, store = wired
+    store.upsert_jobs(sample_jobs()[:1])
+    job_id = store.known_ids().pop()
+    store.save_fit(Fit(job_id=job_id, score=95, verdict="strong", pitch="p",
+                       red_flags=["The posting states it cannot sponsor visas"]))
+    assert pipeline.stage_queue(cfg, store)["queued"] == 0
+
+
+def test_queue_drops_a_clearance_requirement(wired):
+    from jobagent.models import Fit
+
+    cfg, store = wired
+    store.upsert_jobs(sample_jobs()[:1])
+    job_id = store.known_ids().pop()
+    store.save_fit(Fit(job_id=job_id, score=95, verdict="strong", pitch="p",
+                       red_flags=["Requires an active security clearance"]))
+    assert pipeline.stage_queue(cfg, store)["queued"] == 0

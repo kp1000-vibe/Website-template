@@ -220,3 +220,27 @@ def test_a_broken_page_reports_instead_of_raising(job_row, artifacts, tmp_path):
     resume.write_bytes(b"%PDF")
     report = Filler(PROFILE, resume).fill_page(Exploding([]), job_row, artifacts)
     assert "navigation happened" in report.error
+
+
+def test_visa_question_as_a_text_box_gets_the_sentence_not_yes(job_row, artifacts, tmp_path):
+    profile = Profile(raw={
+        **PROFILE.raw,
+        "eligibility": {"authorized_to_work": True, "requires_sponsorship": True,
+                        "status_note": "I am on an H1B with an approved I-140 and "
+                                       "would need an H1B transfer."},
+    })
+    fields = [
+        field(0, "Describe your current work authorization status",
+              tag="textarea", type="textarea"),
+        field(1, "Will you now or in the future require sponsorship?",
+              tag="select", type="select-one",
+              options=[{"value": "1", "text": "Yes"}, {"value": "0", "text": "No"}]),
+    ]
+    resume = tmp_path / "resume.pdf"
+    resume.write_bytes(b"%PDF")
+    page = FakePage(fields)
+    Filler(profile, resume).fill_page(page, job_row, artifacts)
+    filled = {label: value for _, label, value in page.actions}
+    assert "approved I-140" in filled["Describe your current work authorization status"]
+    # the dropdown still gets the plain answer
+    assert filled["Will you now or in the future require sponsorship?"] == "Yes"

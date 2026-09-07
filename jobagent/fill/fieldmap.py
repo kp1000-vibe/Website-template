@@ -25,6 +25,10 @@ class Rule:
     kind: str
     patterns: list[re.Pattern]
     value: str | Callable[[], str]
+    # What to write when the same question arrives as a free text box rather than
+    # a yes or no dropdown. "Yes" is a poor answer to "describe your work
+    # authorization status".
+    long_value: str = ""
     # Some fields we deliberately refuse to touch even when we could.
     skip: bool = False
     note: str = ""
@@ -90,11 +94,13 @@ def build_rules(profile: Profile, resume_path: str) -> list[Rule]:
         Rule("work_auth", CHOICE,
              _p(r"legally (authoriz|entitl)ed to work", r"authorized to work",
                 r"eligible to work", r"right to work", r"work authorization"),
-             _yesno(elig.get("authorized_to_work", True))),
+             _yesno(elig.get("authorized_to_work", True)),
+             long_value=elig.get("status_note", "")),
         Rule("sponsorship", CHOICE,
              _p(r"require .*sponsor", r"need .*sponsor", r"sponsorship (now|in the future)",
                 r"visa sponsorship", r"will you .*require .*visa"),
-             _yesno(elig.get("requires_sponsorship", False))),
+             _yesno(elig.get("requires_sponsorship", False)),
+             long_value=elig.get("status_note", "")),
         Rule("clearance", CHOICE, _p(r"security clearance"),
              _yesno(elig.get("security_clearance", False))),
         Rule("age18", CHOICE, _p(r"(at least|over) 18", r"18 years"), "Yes"),

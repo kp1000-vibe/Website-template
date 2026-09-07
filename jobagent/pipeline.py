@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -31,6 +32,20 @@ log = logging.getLogger(__name__)
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+# A red flag only blocks the queue when it says the door is shut. "Candidate will
+# need sponsorship" is a fact about the candidate, not a rejection, and matching
+# the bare word "sponsor" would empty the queue for anyone who needs one.
+BLOCKING_FLAG = re.compile(
+    r"(security clearance|ts/sci|polygraph"
+    r"|(?:no|not|cannot|can not|unable to|will not|does not|do not)\s+\w*\s*sponsor"
+    r"|sponsorship (?:is )?not (?:available|offered|provided)"
+    r"|without sponsorship"
+    r"|citizen(?:ship)? (?:only|required)"
+    r"|must be a u\.?s\.? (?:citizen|person))",
+    re.I,
+)
 
 
 def get_store(cfg: Config) -> Store:
@@ -126,7 +141,7 @@ def stage_queue(cfg: Config, store: Store) -> dict:
         if per_company.get(company, 0) >= cfg.max_per_company_per_day:
             continue
         red_flags = json.loads(row["red_flags"] or "[]")
-        if any("clearance" in f.lower() or "sponsor" in f.lower() for f in red_flags):
+        if any(BLOCKING_FLAG.search(f) for f in red_flags):
             continue
         store.enqueue(row["id"])
         per_company[company] = per_company.get(company, 0) + 1

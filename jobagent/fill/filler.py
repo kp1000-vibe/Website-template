@@ -312,6 +312,10 @@ class Filler:
         value = None
         if rule and rule.kind in (TEXT, CHOICE, LONGTEXT) and rule.key == "cover_letter":
             value = cover_letter
+        elif rule and rule.long_value and spec["tag"] == "textarea":
+            # A yes or no answer belongs in a dropdown. A text box asking the same
+            # thing wants the sentence.
+            value = rule.long_value
         elif rule and rule.kind in (TEXT, CHOICE, LONGTEXT):
             value = rule.resolve()
         if not value and spec["tag"] == "textarea":

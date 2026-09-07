@@ -54,6 +54,20 @@ Two fields decide more applications than anything else you write:
 still `FILL_ME`. A blank sponsorship answer going out under your name is worse
 than no application at all.
 
+### If you need visa sponsorship
+
+Set `eligibility.requires_sponsorship: true` and two things switch on.
+
+Sourcing drops any posting whose description says it will not sponsor, before it
+costs you a scoring call. Only the negative phrasings match, so a posting that
+says it is happy to sponsor comes through untouched.
+
+`eligibility.status_note` is used when a form asks about your status in a free
+text box rather than a yes or no dropdown, where "Yes" reads badly. The dropdown
+still gets the plain answer. Note that being authorized to work today and needing
+future sponsorship are two different questions, and for an H1B holder the honest
+answers are yes and yes.
+
 ### Chrome
 
 The agent drives Chrome through the remote debugging port. Chrome 136 and later
