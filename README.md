@@ -36,10 +36,19 @@ macOS or Linux:
 ./setup.sh
 ```
 
-Windows, in PowerShell:
+Windows:
 
 ```powershell
-.\setup.ps1
+.\setup.cmd
+```
+
+Use `setup.cmd`, not `setup.ps1` directly. Windows refuses to run unsigned
+PowerShell scripts by default, and `setup.cmd` bypasses that for the single run
+without changing any machine setting. If you would rather call the PowerShell
+script yourself:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
 ```
 
 That creates the virtual environment, installs everything, copies the config
