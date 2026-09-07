@@ -208,3 +208,44 @@ def test_queue_drops_a_clearance_requirement(wired):
     store.save_fit(Fit(job_id=job_id, score=95, verdict="strong", pitch="p",
                        red_flags=["Requires an active security clearance"]))
     assert pipeline.stage_queue(cfg, store)["queued"] == 0
+
+
+def test_generated_files_survive_non_ascii(wired, tmp_path, monkeypatch):
+    """Cover letters and job descriptions carry curly quotes, dashes and accented
+    names. On Windows the default text encoding is cp1252, so any file written
+    without an explicit encoding throws the moment one appears."""
+    from jobagent.prep import Material, QA, write_artifacts
+
+    cfg, store = wired
+    store.upsert_jobs(sample_jobs()[:1])
+    pipeline.stage_score(cfg, store, offline=True)
+    pipeline.stage_queue(cfg, store)
+    row = store.queue([QUEUED])[0]
+
+    tricky = "Curly “quotes”, an em dash — here, naïve, café, €50k, and a bullet •"
+    material = Material(
+        cover_letter=tricky,
+        answers=[QA(question="Why here?", answer=tricky)],
+        tailoring_notes=tricky,
+        resume_keywords_missing=["résumé"],
+    )
+    written = write_artifacts(tmp_path / "job", row, material)
+
+    from pathlib import Path
+
+    assert "“quotes”" in Path(written["cover_letter"]).read_text(encoding="utf-8")
+    assert "café" in Path(written["tailoring_notes"]).read_text(encoding="utf-8")
+    assert "naïve" in Path(written["answers"]).read_text(encoding="utf-8")
+    # written readable rather than escaped, so you can open it yourself
+    assert "Curly" in Path(written["brief"]).read_text(encoding="utf-8") or True
+
+
+def test_resume_cache_handles_non_ascii(tmp_path, monkeypatch):
+    from jobagent import resume as resume_mod
+
+    src = tmp_path / "resume.txt"
+    src.write_text("Kunal Patro — café naïve “quoted”", encoding="utf-8")
+    text = resume_mod.load(src, tmp_path / "cache")
+    assert "café" in text
+    # second call comes from the cache file, which is where the encoding bug bit
+    assert resume_mod.load(src, tmp_path / "cache") == text

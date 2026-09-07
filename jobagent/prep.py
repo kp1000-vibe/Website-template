@@ -184,18 +184,20 @@ def write_artifacts(directory: Path, job_row, material: Material) -> dict[str, s
     red_flags = json.loads(job_row["red_flags"] or "[]")
     if red_flags:
         summary += ["", "## Red flags", *(f"* {r}" for r in red_flags)]
-    (directory / "brief.md").write_text("\n".join(summary))
+    (directory / "brief.md").write_text("\n".join(summary), encoding="utf-8")
     written["brief"] = str(directory / "brief.md")
 
     if material.cover_letter.strip():
-        (directory / "cover_letter.txt").write_text(material.cover_letter.strip() + "\n")
+        (directory / "cover_letter.txt").write_text(material.cover_letter.strip() + "\n", encoding="utf-8")
         written["cover_letter"] = str(directory / "cover_letter.txt")
 
     if material.answers:
         payload = [{"question": a.question, "answer": a.answer} for a in material.answers]
-        (directory / "answers.json").write_text(json.dumps(payload, indent=2))
+        (directory / "answers.json").write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         readable = "\n\n".join(f"Q: {a.question}\n\n{a.answer}" for a in material.answers)
-        (directory / "answers.md").write_text(readable + "\n")
+        (directory / "answers.md").write_text(readable + "\n", encoding="utf-8")
         written["answers"] = str(directory / "answers.json")
 
     if material.tailoring_notes.strip():
@@ -203,7 +205,7 @@ def write_artifacts(directory: Path, job_row, material: Material) -> dict[str, s
         if material.resume_keywords_missing:
             notes += "\n\n## Keywords in the posting, missing from the resume\n"
             notes += "\n".join(f"* {k}" for k in material.resume_keywords_missing)
-        (directory / "tailoring_notes.md").write_text(notes + "\n")
+        (directory / "tailoring_notes.md").write_text(notes + "\n", encoding="utf-8")
         written["tailoring_notes"] = str(directory / "tailoring_notes.md")
 
     return written

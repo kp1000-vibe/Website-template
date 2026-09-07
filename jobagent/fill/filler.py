@@ -198,10 +198,10 @@ class Filler:
         report = FillReport(job_id=job_row["id"], url=job_row["url"], ats=job_row["ats"] or "")
         answers: list[dict] = []
         if artifacts.get("answers") and Path(artifacts["answers"]).exists():
-            answers = json.loads(Path(artifacts["answers"]).read_text())
+            answers = json.loads(Path(artifacts["answers"]).read_text(encoding="utf-8"))
         cover_letter = ""
         if artifacts.get("cover_letter") and Path(artifacts["cover_letter"]).exists():
-            cover_letter = Path(artifacts["cover_letter"]).read_text().strip()
+            cover_letter = Path(artifacts["cover_letter"]).read_text(encoding="utf-8").strip()
 
         try:
             open_application_form(page)

@@ -33,7 +33,7 @@ def extract(path: Path) -> str:
     elif suffix in (".docx", ".doc"):
         text = _from_docx(path)
     elif suffix in (".txt", ".md"):
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
     else:
         raise ValueError(f"unsupported resume format: {suffix}. Use pdf, docx, txt or md.")
     text = "\n".join(line.rstrip() for line in text.splitlines())
@@ -50,11 +50,11 @@ def load(path: Path, cache_dir: Path) -> str:
     key = f"{path}:{stat.st_mtime_ns}:{stat.st_size}"
     if cache_file.exists():
         try:
-            cached = json.loads(cache_file.read_text())
+            cached = json.loads(cache_file.read_text(encoding="utf-8"))
             if cached.get("key") == key:
                 return cached["text"]
         except (ValueError, KeyError):
             pass
     text = extract(path)
-    cache_file.write_text(json.dumps({"key": key, "text": text}))
+    cache_file.write_text(json.dumps({"key": key, "text": text}), encoding="utf-8")
     return text

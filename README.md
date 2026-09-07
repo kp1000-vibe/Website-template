@@ -30,8 +30,16 @@ day you get two, and two good applications beat five bad ones.
 
 ## Setup
 
+macOS or Linux:
+
 ```bash
 ./setup.sh
+```
+
+Windows, in PowerShell:
+
+```powershell
+.\setup.ps1
 ```
 
 That creates the virtual environment, installs everything, copies the config
@@ -51,8 +59,25 @@ export ANTHROPIC_API_KEY=sk-ant-...    # or run `ant auth login`
 ./.venv/bin/python -m jobagent review          # http://127.0.0.1:8765
 ```
 
-Activate the environment with `source .venv/bin/activate` if you would rather
-type `python -m jobagent ...` without the path prefix.
+On Windows the same steps read:
+
+```powershell
+notepad config\profile.yaml
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+
+.\.venv\Scripts\python -m jobagent verify-boards
+.\.venv\Scripts\python -m jobagent chrome
+.\.venv\Scripts\python -m jobagent run
+.\.venv\Scripts\python -m jobagent review
+```
+
+Activate the environment instead (`source .venv/bin/activate`, or
+`.\.venv\Scripts\Activate.ps1`) if you would rather type
+`python -m jobagent ...` without the path prefix.
+
+Everything the agent writes is utf-8 regardless of platform, which matters on
+Windows where the default text encoding is cp1252 and would otherwise fail on
+the first curly quote in a generated cover letter.
 
 `config/profile.yaml` is gitignored and stays on your machine. Fill it carefully.
 Two fields decide more applications than anything else you write:

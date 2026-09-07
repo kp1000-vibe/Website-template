@@ -232,7 +232,10 @@ def stage_prefill(cfg: Config, store: Store, job_ids: list[str] | None = None) -
             directory = Path(artifacts.get("brief", "")).parent if artifacts.get("brief") else \
                 artifact_dir(RUNS_DIR, row)
             directory.mkdir(parents=True, exist_ok=True)
-            (directory / "fill_report.json").write_text(json.dumps(report.to_dict(), indent=2))
+            (directory / "fill_report.json").write_text(
+                json.dumps(report.to_dict(), indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
             status = FAILED if report.error else PREFILLED
             store.set_status(row["id"], status, notes=report.summary(),
                              prefilled_at=_now())

@@ -244,3 +244,31 @@ def test_visa_question_as_a_text_box_gets_the_sentence_not_yes(job_row, artifact
     assert "approved I-140" in filled["Describe your current work authorization status"]
     # the dropdown still gets the plain answer
     assert filled["Will you now or in the future require sponsorship?"] == "Yes"
+
+
+def test_finds_chrome_on_windows(monkeypatch):
+    """Windows installs Chrome per machine or per user. The per user path under
+    AppData is the one that is easy to miss, and there is no Windows box in CI."""
+
+    from jobagent.fill import browser
+
+    monkeypatch.setattr(browser.platform, "system", lambda: "Windows")
+    per_user = r"C:\Users\kp\AppData\Local\Google\Chrome\Application\chrome.exe"
+    monkeypatch.setattr(browser, "WINDOWS_PATHS",
+                        [r"C:\Program Files\Google\Chrome\Application\chrome.exe", per_user])
+    monkeypatch.setattr(browser.Path, "exists", lambda self: str(self) == per_user)
+    assert browser.find_chrome(None) == per_user
+
+    # nothing installed anywhere, and not on PATH either
+    monkeypatch.setattr(browser.Path, "exists", lambda self: False)
+    monkeypatch.setattr(browser.shutil, "which", lambda name: None)
+    assert browser.find_chrome(None) is None
+
+
+def test_explicit_chrome_path_wins(monkeypatch, tmp_path):
+    from jobagent.fill import browser
+
+    exe = tmp_path / "chrome.exe"
+    exe.write_text("x")
+    assert browser.find_chrome(str(exe)) == str(exe)
+    assert browser.find_chrome(str(tmp_path / "nope.exe")) is None

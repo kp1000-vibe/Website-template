@@ -9,6 +9,7 @@ That profile is a real browser you can also use by hand.
 from __future__ import annotations
 
 import logging
+import os
 import platform
 import shutil
 import socket
@@ -23,9 +24,14 @@ MAC_PATHS = [
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
 ]
 LINUX_NAMES = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]
+# Windows installs Chrome per machine or per user, and the per user location is
+# the common one when someone installed it without an admin prompt.
 WINDOWS_PATHS = [
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
     r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+    os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
+    os.path.expandvars(r"%PROGRAMFILES%\Google\Chrome\Application\chrome.exe"),
+    os.path.expandvars(r"%PROGRAMFILES(X86)%\Google\Chrome\Application\chrome.exe"),
 ]
 
 
@@ -36,7 +42,8 @@ def find_chrome(explicit: str | None = None) -> str | None:
     if system == "Darwin":
         return next((p for p in MAC_PATHS if Path(p).exists()), None)
     if system == "Windows":
-        return next((p for p in WINDOWS_PATHS if Path(p).exists()), None)
+        found = next((p for p in WINDOWS_PATHS if Path(p).exists()), None)
+        return found or shutil.which("chrome") or shutil.which("chrome.exe")
     for candidate in LINUX_NAMES:
         found = shutil.which(candidate)
         if found:

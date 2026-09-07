@@ -72,7 +72,7 @@ def fetch_url(url: str) -> Job | None:
 def fetch(path: Path) -> Iterator[Job]:
     if not path.exists():
         return
-    for line in path.read_text().splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         line = line.split("#", 1)[0].strip()
         if not line.startswith("http"):
             continue

@@ -151,7 +151,7 @@ def cmd_verify_boards(cfg, args):
         return 1
 
     out = CONFIG_DIR / "boards.verified.yaml"
-    out.write_text(yaml.safe_dump(verified, sort_keys=True))
+    out.write_text(yaml.safe_dump(verified, sort_keys=True), encoding="utf-8")
     print(f"\nwrote {out} with {alive_total} live boards. "
           f"It takes precedence over boards.yaml from now on.")
 
@@ -243,7 +243,7 @@ def cmd_export(cfg, args):
     finally:
         store.close()
     out = Path(args.out)
-    with out.open("w", newline="") as fh:
+    with out.open("w", newline="", encoding="utf-8") as fh:
         writer = csv.writer(fh)
         writer.writerow(["date", "company", "title", "location", "score",
                          "status", "url", "notes"])

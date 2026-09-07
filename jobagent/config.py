@@ -25,7 +25,7 @@ def _read_yaml(path: Path) -> dict[str, Any]:
             f"missing {path.relative_to(ROOT) if path.is_relative_to(ROOT) else path}. "
             f"Copy the .example file next to it and fill it in."
         )
-    with path.open() as fh:
+    with path.open(encoding="utf-8") as fh:
         data = yaml.safe_load(fh) or {}
     if not isinstance(data, dict):
         raise ConfigError(f"{path} must contain a yaml mapping at the top level")

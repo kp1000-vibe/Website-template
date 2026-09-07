@@ -36,7 +36,7 @@ def _decode(row) -> dict:
     data["fill_report"] = {}
     if report_path and report_path.exists():
         try:
-            data["fill_report"] = json.loads(report_path.read_text())
+            data["fill_report"] = json.loads(report_path.read_text(encoding="utf-8"))
         except ValueError:
             pass
     return data
@@ -70,7 +70,7 @@ def create_app(cfg: Config) -> Flask:
         runs = pipeline.RUNS_DIR.resolve()
         if not target.is_relative_to(runs) or not target.exists():
             return "not found", 404
-        return app.response_class(target.read_text(), mimetype="text/plain")
+        return app.response_class(target.read_text(encoding="utf-8"), mimetype="text/plain")
 
     @app.post("/prefill/<job_id>")
     def prefill(job_id: str):
