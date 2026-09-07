@@ -6,6 +6,12 @@
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
+# Everything printed below is also saved to setup-log.txt, so a failed run can be
+# shared as a file instead of copied out of the terminal by hand. Copying console
+# text back into PowerShell is easy to do by accident, since right click pastes.
+$log = Join-Path $PSScriptRoot "setup-log.txt"
+try { Start-Transcript -Path $log -Force | Out-Null } catch { }
+
 function Say($msg) { Write-Host "`n$msg" -ForegroundColor White -BackgroundColor DarkBlue }
 
 Say "1/5  checking python"
@@ -71,4 +77,7 @@ Next, in order:
   5. .\.venv\Scripts\python -m jobagent run
   6. .\.venv\Scripts\python -m jobagent review      then open http://127.0.0.1:8765
 
+A full log of this run was saved to setup-log.txt
+
 "@
+try { Stop-Transcript | Out-Null } catch { }

@@ -12,3 +12,6 @@ config/config.yaml
 config/boards.verified.yaml
 chrome-profile/
 *.db
+
+# setup transcript
+setup-log.txt

@@ -3,6 +3,10 @@
 set -euo pipefail
 
 cd "$(dirname "$0")"
+
+# Mirror everything to setup-log.txt so a failed run can be shared as a file.
+exec > >(tee setup-log.txt) 2>&1
+
 say() { printf "\n\033[1m%s\033[0m\n" "$*"; }
 
 say "1/5  checking python"
