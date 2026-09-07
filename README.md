@@ -50,6 +50,10 @@ python -m jobagent verify-boards   # prunes dead company boards, takes a minute
 Two fields decide more applications than anything else you write:
 `eligibility.authorized_to_work` and `eligibility.requires_sponsorship`.
 
+`score`, `prep`, `prefill` and `run` refuse to start while any required field is
+still `FILL_ME`. A blank sponsorship answer going out under your name is worse
+than no application at all.
+
 ### Chrome
 
 The agent drives Chrome through the remote debugging port. Chrome 136 and later
@@ -99,9 +103,11 @@ down:
 
 **source** hits every board in `config/boards.yaml` concurrently, normalizes the
 postings, and applies the cheap filters: is the title actually product management
-(product marketing and technical program manager are excluded), was it posted
-inside `max_age_days`, is the location one you can work, is there a real
-description. A dead board is logged and skipped, never fatal.
+(product marketing and technical program manager are excluded), is the level one
+you would take (`seniority_allow`, which drops associate and vp roles before you
+pay to score them), was it posted inside `max_age_days`, is the location one you
+can work, is there a real description. A dead board is logged and skipped, never
+fatal.
 
 **score** sends each surviving posting to Claude with your resume and constraints
 in a cached system prompt, and gets back a structured verdict: a 0 to 100 score,
@@ -145,8 +151,12 @@ genuinely done. Editing the resume stays your call.
 ## Cost
 
 At `claude-opus-5`, a normal day scores roughly 40 to 80 postings and preps 5.
-That is a few dollars a day, less once the prompt cache warms up inside a run,
-since your resume and preferences are byte identical across every call.
+That is a few dollars a day.
+
+The system prompt carrying your resume is byte identical across every call in a
+run and is marked for caching, but a one page resume lands around 1,800 tokens,
+which may sit under the minimum cacheable prefix. Treat the cache as a bonus, not
+as the budget.
 
 To spend less, set `llm.model: claude-sonnet-5` in `config.yaml`, or lower
 `llm.max_scored_per_run`.
@@ -179,7 +189,7 @@ filler to get the first page and leave you the rest.
 python -m pytest tests -q
 ```
 
-34 tests covering the title and location filters, the store dedup, the daily
+35 tests covering the title, seniority and location filters, the store dedup, the daily
 pick, every source parser, the field matching rules, and the filler driven
 against a fake page. The filler tests are the ones to keep green: they assert
 that sponsorship and work authorization are answered correctly, and that

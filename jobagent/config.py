@@ -75,12 +75,16 @@ class Profile:
             ("identity", "full_name"),
             ("identity", "email"),
             ("identity", "phone"),
+            ("identity", "city"),
+            ("identity", "state"),
             ("eligibility", "work_authorization"),
             ("eligibility", "requires_sponsorship"),
+            ("preferences", "work_mode"),
         ]
         out = []
         for section, key in required:
-            if getattr(self, section).get(key) in (None, "", "FILL_ME"):
+            value = getattr(self, section).get(key)
+            if value in (None, "", "FILL_ME") or (isinstance(value, str) and "FILL_ME" in value):
                 out.append(f"{section}.{key}")
         return out
 
@@ -111,6 +115,11 @@ class Config:
     @property
     def titles_exclude(self) -> list[str]:
         return self.raw.get("search", {}).get("titles_exclude", [])
+
+    @property
+    def seniority_allow(self) -> list[str]:
+        """Levels worth applying to. Empty means the defaults in filters.py."""
+        return self.raw.get("search", {}).get("seniority_allow", [])
 
     @property
     def locations_allow(self) -> list[str]:

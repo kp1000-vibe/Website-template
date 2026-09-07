@@ -300,6 +300,17 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(f"config problem: {exc}", file=sys.stderr)
         return 1
+    # A blank work authorization or sponsorship answer is worse than no
+    # application at all, so the stages that produce one refuse to start.
+    if args.command in {"score", "prep", "prefill", "run"}:
+        missing = cfg.profile.missing_required()
+        if missing:
+            print("profile.yaml is not finished. Still to fill:", file=sys.stderr)
+            for item in missing:
+                print(f"  {item}", file=sys.stderr)
+            print("\nRun `python -m jobagent doctor` for the full check.", file=sys.stderr)
+            return 1
+
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
     try:

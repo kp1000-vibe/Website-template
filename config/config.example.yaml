@@ -7,13 +7,24 @@ search:
   remote_only: false
   max_per_company_per_day: 1
 
+  # Levels worth an application. "mid" is a plain Product Manager title with no
+  # modifier, which at a large company is often a senior scoped role anyway.
+  # Dropping associate and vp here is cheaper than paying the model to tell you
+  # they are the wrong level.
+  seniority_allow: ["mid", "senior", "principal", "group", "director"]
+
   # Metros you would work in. Remote US roles are allowed regardless.
   locations_allow:
     - "San Francisco"
-    - "New York"
-    - "Seattle"
-    - "Austin"
-    - "Boston"
+    - "Bay Area"
+    - "Oakland"
+    - "San Jose"
+    - "Palo Alto"
+    - "Mountain View"
+    - "Cupertino"
+    - "Sunnyvale"
+    - "Santa Clara"
+    - "Menlo Park"
     - "Remote"
 
   # Companies you never want to see. Substring match on the company name.
@@ -36,6 +47,7 @@ documents:
     - "Why do you want to work at this company?"
     - "Why are you a good fit for this specific role?"
     - "Describe a product you shipped and the outcome it drove."
+    - "Tell us about a time you drove a cross functional program without direct authority."
 
 browser:
   cdp_port: 9222

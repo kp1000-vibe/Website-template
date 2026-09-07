@@ -68,6 +68,10 @@ SENIORITY_PATTERNS: list[tuple[str, str]] = [
     ("associate", r"\bassociate\b|\bapm\b|\bjunior\b|\bjr\.?\b|\bentry\b"),
 ]
 
+# Levels you would actually take. Anything outside this is dropped before the
+# model sees it, which is cheaper than paying for a "you are overqualified" verdict.
+DEFAULT_SENIORITY_ALLOW = ["mid", "senior", "principal", "group", "director"]
+
 REMOTE_HINTS = re.compile(
     r"\bremote\b|\bwork from home\b|\bwfh\b|\bdistributed\b|\banywhere\b", re.I
 )
@@ -123,6 +127,10 @@ def seniority(title: str) -> str:
     return "mid"
 
 
+def seniority_ok(title: str, allow: list[str] | None) -> bool:
+    return seniority(title) in (allow or DEFAULT_SENIORITY_ALLOW)
+
+
 def is_fresh(job: Job, max_age_days: int, now: datetime | None = None) -> bool:
     """Unknown posting dates are kept. Dropping them loses real jobs."""
     age = job.age_days(now or datetime.now(timezone.utc))
@@ -161,6 +169,8 @@ def prefilter(jobs, cfg, title_filter: TitleFilter, now=None):
     for job in jobs:
         if not title_filter.matches(job.title):
             yield job, "title"
+        elif not seniority_ok(job.title, cfg.seniority_allow):
+            yield job, "seniority"
         elif not is_fresh(job, cfg.max_age_days, now):
             yield job, "stale"
         elif not company_ok(job, cfg.companies_block):

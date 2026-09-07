@@ -8,6 +8,9 @@
 # which pings every token and writes the live ones to boards.verified.yaml. That
 # file takes precedence once it exists. Rerun it monthly.
 #
+# The list below is weighted toward data platforms, AI, commerce and enterprise
+# tooling, which is where this resume is strongest. Trim what you do not want.
+#
 # To add a company: open its careers page and read the url.
 #   job-boards.greenhouse.io/TOKEN  or boards.greenhouse.io/TOKEN  -> greenhouse
 #   jobs.lever.co/TOKEN                                            -> lever
@@ -16,101 +19,157 @@
 # Anything on myworkdayjobs.com or icims.com has no open api. Put those postings
 # in config/manual_urls.txt instead.
 
-greenhouse:
-  - airtable
-  - anthropic
-  - asana
-  - benchling
-  - betterment
-  - brex
-  - chime
-  - cloudflare
-  - coinbase
-  - databricks
-  - datadog
-  - discord
-  - doordash
-  - dropbox
-  - duolingo
-  - figma
-  - flexport
-  - gitlab
-  - grammarly
-  - gusto
-  - hashicorp
-  - instacart
-  - intercom
-  - lyft
-  - mongodb
-  - motive
-  - navan
-  - notion
-  - nuro
-  - okta
-  - opendoor
-  - pinterest
-  - plaid
-  - reddit
-  - robinhood
-  - roblox
-  - samsara
-  - scaleai
-  - sentry
-  - snowflake
-  - sofi
-  - square
-  - stripe
-  - twilio
-  - unity
-  - vercel
-  - webflow
-  - wealthfront
-  - zapier
-
-lever:
-  - affirm
-  - attentive
-  - benchling
-  - clearcover
-  - figma
-  - fivetran
-  - kraken
-  - lattice
-  - matterport
-  - mercury
-  - netflix
-  - nerdwallet
-  - palantir
-  - plaid
-  - rippling
-  - shipbob
-  - sightglass
-  - vimeo
-
 ashby:
-  - anysphere
-  - clay
-  - cohere
-  - deel
-  - discord
-  - hex
-  - linear
-  - loom
-  - notion
-  - openai
-  - perplexity-ai
-  - posthog
-  - ramp
-  - replit
-  - retool
-  - runway
-  - scale
-  - sierra
-  - vanta
-  - warp
-
+- anysphere
+- arcade
+- baseten
+- browserbase
+- clay
+- cohere
+- decagon
+- deel
+- discord
+- glean
+- harvey
+- hex
+- linear
+- loom
+- mintlify
+- modal
+- neon
+- notion
+- openai
+- perplexity-ai
+- posthog
+- ramp
+- replit
+- retool
+- runway
+- scale
+- sierra
+- sierraai
+- supabase
+- temporal
+- vanta
+- warp
+greenhouse:
+- affirm
+- airbyte
+- airtable
+- amplitude
+- anthropic
+- anyscale
+- arizeai
+- asana
+- atlassian
+- benchling
+- betterment
+- box
+- brex
+- chewy
+- chime
+- clickhouse
+- cloudflare
+- coinbase
+- confluent
+- cribl
+- cruise
+- databricks
+- datadog
+- dbtlabs
+- discord
+- doordash
+- dropbox
+- duolingo
+- etsy
+- faire
+- figma
+- fishtownanalytics
+- flexport
+- gitlab
+- gopuff
+- grammarly
+- gusto
+- hashicorp
+- hex
+- hightouch
+- huggingface
+- instacart
+- intercom
+- kodiakrobotics
+- lyft
+- marqeta
+- mongodb
+- monteecarlodata
+- motive
+- navan
+- notion
+- nuro
+- okta
+- opendoor
+- peloton
+- pineconeio
+- pinterest
+- plaid
+- procore
+- reddit
+- robinhood
+- roblox
+- samsara
+- scaleai
+- sentry
+- servicetitan
+- shopify
+- sigmacomputing
+- skydio
+- smartsheet
+- snowflake
+- sofi
+- square
+- starburst
+- stripe
+- tecton
+- toast
+- togethercomputer
+- twilio
+- unity
+- vercel
+- warbyparker
+- wayfair
+- waymo
+- wealthfront
+- webflow
+- weightsandbiases
+- whatnot
+- zapier
+- zipline
+lever:
+- affirm
+- alloy
+- anduril
+- attentive
+- benchling
+- clearcover
+- figma
+- fivetran
+- kraken
+- lattice
+- matterport
+- mercury
+- nerdwallet
+- netflix
+- palantir
+- plaid
+- rippling
+- sardine
+- scale
+- shipbob
+- sightglass
+- standardcognition
+- verkada
+- vimeo
 smartrecruiters:
-  - Visa
-  - Bosch
-  - Ubisoft
-  - McDonalds
+- Visa
+- Bosch
+- Ubisoft
+- McDonalds

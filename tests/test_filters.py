@@ -70,3 +70,18 @@ def test_remote_only_mode():
     allow = ["San Francisco"]
     assert location_ok(job(location="Remote"), allow, True)
     assert not location_ok(job(location="San Francisco, CA"), allow, True)
+
+
+def test_seniority_gate():
+    from jobagent.filters import seniority_ok
+
+    allow = ["mid", "senior", "principal", "group", "director"]
+    assert seniority_ok("Senior Product Manager", allow)
+    assert seniority_ok("Product Manager", allow)
+    assert seniority_ok("Principal Product Manager", allow)
+    assert seniority_ok("Group Product Manager", allow)
+    assert seniority_ok("Director of Product", allow)
+    # too junior and too senior both waste an application
+    assert not seniority_ok("Associate Product Manager", allow)
+    assert not seniority_ok("VP of Product", allow)
+    assert not seniority_ok("Chief Product Officer", allow)
