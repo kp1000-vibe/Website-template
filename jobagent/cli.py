@@ -140,9 +140,20 @@ def cmd_verify_boards(cfg, args):
                 alive.append(token)
         verified[ats] = alive
         print(f"{ats}: {len(alive)}/{len(tokens)} live")
+    checked = sum(len(v) for v in (cfg.boards or {}).values())
+    alive_total = sum(len(v) for v in verified.values())
+    # A network problem makes every board look dead. Writing that result would
+    # leave the agent finding nothing, day after day, with no visible error.
+    if checked and alive_total < max(1, checked // 5):
+        print(f"\nonly {alive_total} of {checked} boards answered. That looks like a "
+              f"network problem, not {checked - alive_total} dead companies.")
+        print("nothing written. Check your connection and run this again.")
+        return 1
+
     out = CONFIG_DIR / "boards.verified.yaml"
     out.write_text(yaml.safe_dump(verified, sort_keys=True))
-    print(f"\nwrote {out}. It takes precedence over boards.yaml from now on.")
+    print(f"\nwrote {out} with {alive_total} live boards. "
+          f"It takes precedence over boards.yaml from now on.")
 
 
 def cmd_doctor(cfg_or_error, args):
@@ -314,8 +325,12 @@ def main(argv: list[str] | None = None) -> int:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
     try:
-        args.fn(cfg, args)
+        return args.fn(cfg, args) or 0
     except KeyboardInterrupt:
         print("\nstopped")
         return 130
-    return 0
+    except RuntimeError as exc:
+        # Chrome missing, debugging port refused, that class of thing. The
+        # message is already written for a human, a traceback is not.
+        print(f"\n{exc}", file=sys.stderr)
+        return 1

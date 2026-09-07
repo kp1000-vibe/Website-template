@@ -121,7 +121,9 @@ postings, and applies the cheap filters: is the title actually product managemen
 you would take (`seniority_allow`, which drops associate and vp roles before you
 pay to score them), was it posted inside `max_age_days`, is the location one you
 can work, is there a real description. A dead board is logged and skipped, never
-fatal.
+fatal, and the whole stage is capped by `source_budget_seconds`: whatever
+answered in time is used and the rest are counted and skipped, so a hung network
+cannot stall the morning run.
 
 **score** sends each surviving posting to Claude with your resume and constraints
 in a cached system prompt, and gets back a structured verdict: a 0 to 100 score,
@@ -177,11 +179,13 @@ To spend less, set `llm.model: claude-sonnet-5` in `config.yaml`, or lower
 
 ## Boards
 
-`config/boards.yaml` ships with about 90 company tokens. **It is a starting list,
+`config/boards.yaml` ships with 150 company tokens. **It is a starting list,
 not a verified one.** Tokens change and companies switch ATS. Run
 `python -m jobagent verify-boards` before your first real run and monthly after;
 it pings every token and writes the live ones to `boards.verified.yaml`, which
-takes precedence.
+takes precedence. If fewer than a fifth of the boards answer it writes nothing
+and tells you, because that is a network problem rather than 120 dead companies,
+and a silently emptied board list means the agent finds no jobs at all.
 
 Adding a company is one line. Open its careers page and read the url:
 
@@ -203,7 +207,7 @@ filler to get the first page and leave you the rest.
 python -m pytest tests -q
 ```
 
-35 tests covering the title, seniority and location filters, the store dedup, the daily
+43 tests covering the title, seniority and location filters, the store dedup, the daily
 pick, every source parser, the field matching rules, and the filler driven
 against a fake page. The filler tests are the ones to keep green: they assert
 that sponsorship and work authorization are answered correctly, and that

@@ -26,6 +26,7 @@ def make_cfg(tmp_path) -> Config:
             "search": {"max_age_days": 3, "daily_target": 5, "min_score": 40,
                        "max_per_company_per_day": 1,
                        "seniority_allow": ["mid", "senior", "principal", "group", "director"],
+                       "source_budget_seconds": 30,
                        "locations_allow": ["San Francisco", "New York", "Remote"]},
             "llm": {"model": "claude-opus-5", "max_scored_per_run": 50},
             "documents": {"cover_letter": True},

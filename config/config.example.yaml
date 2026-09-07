@@ -13,6 +13,10 @@ search:
   # they are the wrong level.
   seniority_allow: ["mid", "senior", "principal", "group", "director"]
 
+  # Wall clock ceiling on fetching boards. Whatever answered in time is used and
+  # the rest are reported and skipped, so a hung network never stalls the run.
+  source_budget_seconds: 180
+
   # Metros you would work in. Remote US roles are allowed regardless.
   locations_allow:
     - "San Francisco"

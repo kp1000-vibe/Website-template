@@ -15,7 +15,7 @@ from dateutil import parser as dateparser
 log = logging.getLogger(__name__)
 
 USER_AGENT = "jobagent/0.1 (personal job search; contact via the email in profile.yaml)"
-TIMEOUT = 20
+TIMEOUT = 15
 
 _TAG = re.compile(r"<[^>]+>")
 _WS = re.compile(r"[ \t\r\f\v]+")
@@ -53,7 +53,7 @@ def parse_date(value: Any) -> datetime | None:
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
-def get_json(url: str, *, params: dict | None = None, retries: int = 2) -> Any | None:
+def get_json(url: str, *, params: dict | None = None, retries: int = 1) -> Any | None:
     """GET returning parsed json, or None. A dead board must not kill the run."""
     headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
     for attempt in range(retries + 1):

@@ -117,6 +117,12 @@ class Config:
         return self.raw.get("search", {}).get("titles_exclude", [])
 
     @property
+    def source_budget_seconds(self) -> int:
+        """Wall clock ceiling on the fetch stage, so a hung network cannot stall
+        the daily run."""
+        return int(self.raw.get("search", {}).get("source_budget_seconds", 180))
+
+    @property
     def seniority_allow(self) -> list[str]:
         """Levels worth applying to. Empty means the defaults in filters.py."""
         return self.raw.get("search", {}).get("seniority_allow", [])

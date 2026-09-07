@@ -137,3 +137,35 @@ def test_stage_source_fans_out_and_filters(tmp_path, monkeypatch):
     assert result["passed_filters"] == 3
     # both greenhouse boards return the same posting ids, so one is a duplicate
     assert result["new"] == 2
+
+
+def test_source_budget_stops_a_hanging_board(tmp_path, monkeypatch):
+    """A board that never answers must not stall the morning run."""
+    import time
+
+    from tests.test_end_to_end import make_cfg
+
+    monkeypatch.setattr(pipeline, "DATA_DIR", tmp_path / "data")
+    monkeypatch.setattr(pipeline, "RUNS_DIR", tmp_path / "runs")
+    cfg = make_cfg(tmp_path)
+    cfg.raw["search"]["source_budget_seconds"] = 1
+    cfg.boards = {"greenhouse": ["fast", "hangs"]}
+
+    def maybe_hang(url, params=None, retries=2):
+        if "hangs" in url:
+            time.sleep(3)          # stands in for a board sitting on the socket
+        return GREENHOUSE_PAYLOAD
+
+    monkeypatch.setattr(greenhouse, "get_json", maybe_hang)
+
+    started = time.monotonic()
+    store = pipeline.get_store(cfg)
+    try:
+        result = pipeline.stage_source(cfg, store)
+    finally:
+        store.close()
+    elapsed = time.monotonic() - started
+
+    assert elapsed < 2.5, f"the budget did not hold, took {elapsed:.1f}s"
+    assert result["boards_timed_out"] == 1
+    assert result["fetched"] == 2          # the board that answered still counts

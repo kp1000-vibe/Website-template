@@ -15,6 +15,7 @@ import json
 import logging
 import re
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, TimeoutError, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -63,23 +64,49 @@ def stage_source(cfg: Config, store: Store) -> dict:
     boards = cfg.boards or {}
     raw_jobs = []
 
-    fetchers = [
-        ("greenhouse", lambda toks: greenhouse.fetch(toks)),
-        ("lever", lambda toks: lever.fetch(toks)),
-        ("ashby", lambda toks: ashby.fetch(toks)),
+    # One board is one http call and almost all of the wall clock is waiting, so
+    # fetch them concurrently. A board that is down must never hold up the run.
+    fetchers = {
+        "greenhouse": greenhouse.fetch_company,
+        "lever": lever.fetch_company,
+        "ashby": ashby.fetch_company,
         # SmartRecruiters needs a detail call per posting, so it gets the title
         # filter up front and only pays for postings that could matter.
-        ("smartrecruiters", lambda toks: smartrecruiters.fetch(toks, title_filter=title_filter)),
-    ]
-    for key, fetch in fetchers:
-        tokens = boards.get(key) or []
-        if not tokens:
-            continue
-        log.info("fetching %d %s boards", len(tokens), key)
+        "smartrecruiters": lambda token: smartrecruiters.fetch_company(
+            token, title_filter=title_filter
+        ),
+    }
+    work = [(ats, token) for ats in fetchers for token in (boards.get(ats) or [])]
+    timed_out = 0
+
+    if work:
+        log.info("fetching %d company boards", len(work))
+        # Not a `with` block on purpose: its shutdown waits for every worker, which
+        # would hand the wall clock back to the slowest board and defeat the budget.
+        # The timeout goes on as_completed, which is what actually blocks. Stragglers
+        # are bounded by the http timeout in sources/base.py and their results are
+        # simply discarded.
+        pool = ThreadPoolExecutor(max_workers=12)
         try:
-            raw_jobs.extend(fetch(tokens))
-        except Exception as exc:
-            log.warning("%s source failed: %s", key, exc)
+            futures = {
+                pool.submit(lambda a, t: list(fetchers[a](t)), ats, token): (ats, token)
+                for ats, token in work
+            }
+            try:
+                for future in as_completed(futures, timeout=cfg.source_budget_seconds):
+                    ats, token = futures[future]
+                    try:
+                        raw_jobs.extend(future.result())
+                    except Exception as exc:
+                        log.debug("%s/%s failed: %s", ats, token, exc)
+            except TimeoutError:
+                pass                      # out of budget, keep whatever arrived
+            timed_out = sum(1 for f in futures if not f.done())
+        finally:
+            pool.shutdown(wait=False, cancel_futures=True)
+        if timed_out:
+            log.warning("%d of %d boards did not answer inside the %ds budget",
+                        timed_out, len(work), cfg.source_budget_seconds)
 
     manual_file = CONFIG_DIR / "manual_urls.txt"
     if manual_file.exists():
@@ -94,6 +121,8 @@ def stage_source(cfg: Config, store: Store) -> dict:
 
     new, dup = store.upsert_jobs(keep)
     return {
+        "boards": len(work),
+        "boards_timed_out": timed_out,
         "fetched": len(raw_jobs),
         "passed_filters": len(keep),
         "new": new,
