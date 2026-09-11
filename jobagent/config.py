@@ -143,6 +143,17 @@ class Config:
     def max_per_company_per_day(self) -> int:
         return int(self.raw.get("search", {}).get("max_per_company_per_day", 1))
 
+    # --- sources ---
+    @property
+    def readers(self) -> list[str]:
+        """Which url readers to try, in order. See jobagent/sources/readers.py."""
+        return self.raw.get("sources", {}).get("readers", ["direct", "jina"])
+
+    @property
+    def reader_command(self) -> str | None:
+        """Optional shell template containing {url}, for Agent Reach or similar."""
+        return self.raw.get("sources", {}).get("reader_command")
+
     # --- llm ---
     @property
     def model(self) -> str:

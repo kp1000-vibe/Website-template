@@ -224,6 +224,17 @@ def cmd_doctor(cfg_or_error, args):
           "export ANTHROPIC_API_KEY, or run `ant auth login`")
     check(f"model set to {cfg.model}", bool(cfg.model))
 
+    print("\nurl readers")
+    check(f"configured: {', '.join(cfg.readers)}", bool(cfg.readers),
+          "set sources.readers in config.yaml")
+    if "jina" not in cfg.readers:
+        check("jina reader enabled", False,
+              "LinkedIn and Workday links need it. Add 'jina' to sources.readers",
+              fatal=False)
+    if cfg.reader_command:
+        check("reader_command set", "{url}" in cfg.reader_command,
+              "the template must contain {url}")
+
     print("\nboards")
     total = sum(len(v) for v in (cfg.boards or {}).values())
     check(f"{total} board tokens configured", total > 0, "config/boards.yaml is empty")
@@ -232,6 +243,48 @@ def cmd_doctor(cfg_or_error, args):
           "run `python -m jobagent verify-boards` to drop dead tokens", fatal=False)
 
     print(f"\n{'everything looks ready' if ok else 'fix the FAIL lines above'}\n")
+
+
+def cmd_read(cfg, args):
+    """Try every configured reader against one url and show what each returns.
+
+    Reading a posting is the part most likely to break, and it breaks per site,
+    so this exists to tell you which reader works for a url before you rely on it.
+    """
+    from .sources import manual, readers
+
+    chain = readers.build_chain(cfg.readers, cfg.reader_command)
+    if not chain:
+        print("no readers configured. Set sources.readers in config.yaml")
+        return 1
+
+    print(f"\n{args.url}\n")
+    winner = None
+    for reader in chain:
+        result = reader.read(args.url)
+        if result is None:
+            print(f"  {reader.name:<8} no result")
+            continue
+        mark = "ok  " if result.useful else "thin"
+        print(f"  {reader.name:<8} {mark} {len(result.text):>6} chars   {result.title[:60]}")
+        if result.useful and winner is None:
+            winner = result
+
+    if winner is None:
+        print("\nNothing usable. If this is LinkedIn or Workday, make sure 'jina' is in\n"
+              "sources.readers. For anything Agent Reach handles, set sources.reader_command\n"
+              'to a shell template such as: "curl -s https://r.jina.ai/{url}"')
+        return 1
+
+    job = manual.fetch_url(args.url, chain)
+    if job:
+        print(f"\n  parsed title   {job.title}")
+        print(f"  parsed company {job.company}")
+        print(f"  detected ats   {job.ats}")
+    if args.show:
+        print("\n" + "-" * 70)
+        print(winner.text[:args.show])
+    return 0
 
 
 def cmd_export(cfg, args):
@@ -292,6 +345,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument("--no-prefill", action="store_true",
                        help="stop after prep, prefill later from the dashboard")
     p_run.set_defaults(fn=cmd_run)
+
+    p_read = sub.add_parser("read", help="test the url readers against one posting")
+    p_read.add_argument("url")
+    p_read.add_argument("--show", type=int, metavar="N", default=0,
+                        help="also print the first N characters of the text")
+    p_read.set_defaults(fn=cmd_read)
 
     p_export = sub.add_parser("export", help="write the application log to csv")
     p_export.add_argument("--out", default="applications.csv")

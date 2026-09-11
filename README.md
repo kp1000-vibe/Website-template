@@ -143,6 +143,7 @@ python -m jobagent score --offline     # keyword fallback, no api calls
 python -m jobagent queue               # pick today's shortlist
 python -m jobagent prefill <job_id>    # fill one specific application
 python -m jobagent status              # what is in the pipeline
+python -m jobagent read <url>          # test the url readers on one posting
 python -m jobagent export --out applications.csv
 ```
 
@@ -243,13 +244,50 @@ Workday and iCIMS have no public feed. Put those postings in
 Workday forms are a react application with a multi step wizard, so expect the
 filler to get the first page and leave you the rest.
 
+### Reading the pages that block you
+
+LinkedIn, Workday, Indeed and Glassdoor all refuse a plain http request: a login
+wall, an empty javascript shell, or an outright block. `sources.readers` in
+`config.yaml` is a fallback chain, tried in order, first useful result wins:
+
+| reader | what it is | needs |
+| --- | --- | --- |
+| `direct` | plain http | nothing |
+| `jina` | `https://r.jina.ai/<url>`, returns clean markdown | nothing |
+| `command` | your own shell template containing `{url}` | whatever you point it at |
+
+The default is `["direct", "jina"]`, which covers the open boards cheaply and
+still reads a LinkedIn link you paste.
+
+`command` is the hook for [Agent Reach](https://github.com/Panniantong/Agent-Reach),
+an MIT licensed CLI that installs and routes per platform access for agents:
+X/Twitter, Reddit, YouTube, GitHub, LinkedIn public pages and more. It is not a
+job board and it exposes no single documented search command, by design, so this
+integration is a template you fill in rather than an invocation guessed at:
+
+```yaml
+sources:
+  readers: ["direct", "command"]
+  reader_command: "curl -s https://r.jina.ai/{url}"
+```
+
+Before trusting any of it, check a real url:
+
+```bash
+python -m jobagent read "https://www.linkedin.com/jobs/view/1234567890/"
+```
+
+That prints what each reader returned, how many characters, and the title and
+company it parsed out, so you know which reader works for a site before a run
+depends on it.
+
 ## Tests
 
 ```bash
 python -m pytest tests -q
 ```
 
-43 tests covering the title, seniority and location filters, the store dedup, the daily
+62 tests covering the title, seniority and location filters, the store dedup, the daily
 pick, every source parser, the field matching rules, and the filler driven
 against a fake page. The filler tests are the ones to keep green: they assert
 that sponsorship and work authorization are answered correctly, and that

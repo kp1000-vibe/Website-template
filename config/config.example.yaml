@@ -39,6 +39,21 @@ search:
   titles_include: []
   titles_exclude: []
 
+sources:
+  # How to turn a job url into text. Tried in order, first useful result wins.
+  #   direct   plain http. Fast and enough for Greenhouse, Lever, Ashby.
+  #   jina     https://r.jina.ai, no key, gets through the bot blocking that
+  #            makes LinkedIn, Workday, Indeed and Glassdoor unreadable directly.
+  #   command  your own shell template below, for an Agent Reach install or similar.
+  readers: ["direct", "jina"]
+
+  # Only used when "command" is in the list above. Must contain {url} and print
+  # the page as text on stdout. Agent Reach (github.com/Panniantong/Agent-Reach)
+  # routes per platform rather than exposing one command, so this is the hook you
+  # point at whatever it installed. Its documented zero config web path is:
+  #   reader_command: "curl -s https://r.jina.ai/{url}"
+  reader_command: null
+
 llm:
   model: claude-opus-5
   max_scored_per_run: 80   # cap so a bad day cannot run up a bill

@@ -2,7 +2,11 @@
 
 Drop urls into config/manual_urls.txt (one per line, # comments allowed) and the
 pipeline treats them like any other candidate: scored, queued, prefilled. This is
-the escape hatch for LinkedIn or anything else we do not scrape.
+the escape hatch for LinkedIn, Workday and anything else without an open feed.
+
+Reading those pages is the hard part, so it is delegated to readers.py, which
+tries plain http first and falls back to a reader that can get through a login
+wall or a javascript shell.
 """
 
 from __future__ import annotations
@@ -14,15 +18,12 @@ from pathlib import Path
 from typing import Iterator
 from urllib.parse import urlparse
 
-import requests
-
 from ..models import Job
-from .base import TIMEOUT, USER_AGENT, html_to_text
+from . import readers
 
 log = logging.getLogger(__name__)
 name = "manual"
 
-_TITLE = re.compile(r"(?is)<title[^>]*>(.*?)</title>")
 _ATS_HINTS = {
     "greenhouse": ("greenhouse.io", "job-boards.greenhouse.io"),
     "lever": ("jobs.lever.co",),
@@ -33,6 +34,13 @@ _ATS_HINTS = {
     "linkedin": ("linkedin.com",),
 }
 
+# "Senior Product Manager - Acme" / "Acme hiring Senior PM" / "Senior PM at Acme"
+_TITLE_SPLITTERS = [
+    re.compile(r"^(?P<title>.+?)\s+at\s+(?P<company>.+?)(?:\s*[|–—-].*)?$", re.I),
+    re.compile(r"^(?P<company>.+?)\s+hiring\s+(?P<title>.+?)(?:\s+in\s+.*)?$", re.I),
+    re.compile(r"^(?P<title>.+?)\s*[|–—]\s*(?P<company>.+)$"),
+]
+
 
 def detect_ats(url: str) -> str:
     host = (urlparse(url).netloc or "").lower()
@@ -42,40 +50,55 @@ def detect_ats(url: str) -> str:
     return "unknown"
 
 
-def fetch_url(url: str) -> Job | None:
-    try:
-        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT)
-        resp.raise_for_status()
-    except requests.RequestException as exc:
-        log.warning("could not read %s: %s", url, exc)
+def split_title(raw: str, fallback_host: str) -> tuple[str, str]:
+    """Pull a job title and a company out of a page title."""
+    cleaned = re.sub(r"\s+", " ", raw or "").strip()
+    for pattern in _TITLE_SPLITTERS:
+        match = pattern.match(cleaned)
+        if match:
+            title = match.group("title").strip(" -|–—")
+            company = match.group("company").strip(" -|–—")
+            if title and company:
+                return title, company
+    return cleaned or fallback_host, fallback_host
+
+
+def fetch_url(url: str, chain: list | None = None) -> Job | None:
+    chain = chain if chain is not None else readers.build_chain(None)
+    result = readers.read(url, chain)
+    if result is None:
+        log.warning("could not read %s with any reader", url)
         return None
-    body = resp.text
-    match = _TITLE.search(body)
-    title = html_to_text(match.group(1)) if match else url
+    if not result.useful:
+        log.warning("%s returned only %d characters for %s, which usually means a "
+                    "login wall. Add 'jina' to sources.readers in config.yaml if it "
+                    "is not already there.", result.reader, len(result.text), url)
+
     host = urlparse(url).netloc
-    company = title.split(" at ")[-1] if " at " in title else host
+    title, company = split_title(result.title, host)
     return Job(
         source=name,
         external_id=url,
-        company=company.strip() or host,
-        title=title.strip(),
+        company=company,
+        title=title,
         url=url,
-        description=html_to_text(body)[:20000],
+        description=result.text[:20000],
         # We cannot know when a hand pasted link was posted. Treat it as today so
         # the freshness filter does not silently drop something you chose yourself.
         posted_at=datetime.now(timezone.utc),
         ats=detect_ats(url),
-        raw={},
+        raw={"reader": result.reader},
     )
 
 
-def fetch(path: Path) -> Iterator[Job]:
+def fetch(path: Path, chain: list | None = None) -> Iterator[Job]:
     if not path.exists():
         return
+    chain = chain if chain is not None else readers.build_chain(None)
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.split("#", 1)[0].strip()
         if not line.startswith("http"):
             continue
-        job = fetch_url(line)
+        job = fetch_url(line, chain)
         if job:
             yield job

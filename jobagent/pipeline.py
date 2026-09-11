@@ -25,7 +25,7 @@ from .filters import TitleFilter, prefilter
 from .models import PREFILLED, PREPPED, QUEUED, FAILED
 from .prep import Prepper, artifact_dir, write_artifacts
 from .scoring import Scorer, heuristic_score
-from .sources import ashby, greenhouse, lever, manual, smartrecruiters
+from .sources import ashby, greenhouse, lever, manual, readers, smartrecruiters
 from .store import Store
 
 log = logging.getLogger(__name__)
@@ -110,7 +110,8 @@ def stage_source(cfg: Config, store: Store) -> dict:
 
     manual_file = CONFIG_DIR / "manual_urls.txt"
     if manual_file.exists():
-        raw_jobs.extend(manual.fetch(manual_file))
+        chain = readers.build_chain(cfg.readers, cfg.reader_command)
+        raw_jobs.extend(manual.fetch(manual_file, chain))
 
     keep, reasons = [], Counter()
     for job, dropped in prefilter(raw_jobs, cfg, title_filter):
