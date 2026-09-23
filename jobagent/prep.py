@@ -184,6 +184,15 @@ def write_artifacts(directory: Path, job_row, material: Material) -> dict[str, s
     red_flags = json.loads(job_row["red_flags"] or "[]")
     if red_flags:
         summary += ["", "## Red flags", *(f"* {r}" for r in red_flags)]
+
+    try:
+        contacts = json.loads(job_row["contacts"] or "[]")
+    except (ValueError, TypeError, IndexError, KeyError):
+        contacts = []
+    if contacts:
+        summary += ["", "## Who to contact"]
+        for c in contacts:
+            summary.append(f"* {c['value']}  ({c['kind']}, {c['why']}, {c['confidence']})")
     (directory / "brief.md").write_text("\n".join(summary), encoding="utf-8")
     written["brief"] = str(directory / "brief.md")
 

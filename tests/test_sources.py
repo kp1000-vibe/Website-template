@@ -167,5 +167,5 @@ def test_source_budget_stops_a_hanging_board(tmp_path, monkeypatch):
     elapsed = time.monotonic() - started
 
     assert elapsed < 2.5, f"the budget did not hold, took {elapsed:.1f}s"
-    assert result["boards_timed_out"] == 1
+    assert result["sources_timed_out"] == 1
     assert result["fetched"] == 2          # the board that answered still counts

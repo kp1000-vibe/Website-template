@@ -25,7 +25,9 @@ from .filters import TitleFilter, prefilter
 from .models import PREFILLED, PREPPED, QUEUED, FAILED
 from .prep import Prepper, artifact_dir, write_artifacts
 from .scoring import Scorer, heuristic_score
-from .sources import ashby, greenhouse, lever, manual, readers, smartrecruiters
+from .contacts import extract as extract_contacts
+from .sources import (ashby, greenhouse, lever, manual, readers, smartrecruiters,
+                      social)
 from .store import Store
 
 log = logging.getLogger(__name__)
@@ -76,42 +78,68 @@ def stage_source(cfg: Config, store: Store) -> dict:
             token, title_filter=title_filter
         ),
     }
-    work = [(ats, token) for ats in fetchers for token in (boards.get(ats) or [])]
-    timed_out = 0
-
-    if work:
-        log.info("fetching %d company boards", len(work))
-        # Not a `with` block on purpose: its shutdown waits for every worker, which
-        # would hand the wall clock back to the slowest board and defeat the budget.
-        # The timeout goes on as_completed, which is what actually blocks. Stragglers
-        # are bounded by the http timeout in sources/base.py and their results are
-        # simply discarded.
-        pool = ThreadPoolExecutor(max_workers=12)
-        try:
-            futures = {
-                pool.submit(lambda a, t: list(fetchers[a](t)), ats, token): (ats, token)
-                for ats, token in work
-            }
-            try:
-                for future in as_completed(futures, timeout=cfg.source_budget_seconds):
-                    ats, token = futures[future]
-                    try:
-                        raw_jobs.extend(future.result())
-                    except Exception as exc:
-                        log.debug("%s/%s failed: %s", ats, token, exc)
-            except TimeoutError:
-                pass                      # out of budget, keep whatever arrived
-            timed_out = sum(1 for f in futures if not f.done())
-        finally:
-            pool.shutdown(wait=False, cancel_futures=True)
-        if timed_out:
-            log.warning("%d of %d boards did not answer inside the %ds budget",
-                        timed_out, len(work), cfg.source_budget_seconds)
+    # Every fetch is one unit of work under one deadline. Boards and social posts
+    # alike: a single slow source must never decide how long the morning run takes.
+    work: list[tuple[str, callable]] = [
+        (f"{ats}/{token}", (lambda a=ats, t=token: list(fetchers[a](t))))
+        for ats in fetchers
+        for token in (boards.get(ats) or [])
+    ]
 
     manual_file = CONFIG_DIR / "manual_urls.txt"
     if manual_file.exists():
         chain = readers.build_chain(cfg.readers, cfg.reader_command)
-        raw_jobs.extend(manual.fetch(manual_file, chain))
+        work.append(("manual urls", lambda: list(manual.fetch(manual_file, chain))))
+
+    # Posts written by people rather than by an applicant tracking system. Lower
+    # volume, but they name who to talk to, which a req never does.
+    if cfg.social_hackernews:
+        work.append(("hackernews", lambda: list(
+            social.fetch_hackernews(title_filter, cfg.social_max_age_days))))
+    if cfg.social_reddit:
+        work.append(("reddit", lambda: list(
+            social.fetch_reddit(cfg.social_subreddits, title_filter,
+                                cfg.social_max_age_days))))
+    if cfg.social_command:
+        for query in cfg.social_queries:
+            work.append((f"social:{query[:30]}", lambda q=query: list(
+                social.fetch_command(cfg.social_command, q))))
+
+    timed_out = 0
+    if work:
+        log.info("fetching %d sources", len(work))
+        pool = ThreadPoolExecutor(max_workers=12)
+        try:
+            futures = {pool.submit(fn): label for label, fn in work}
+            try:
+                for future in as_completed(futures, timeout=cfg.source_budget_seconds):
+                    label = futures[future]
+                    try:
+                        raw_jobs.extend(future.result())
+                    except Exception as exc:
+                        log.debug("%s failed: %s", label, exc)
+            except TimeoutError:
+                pass                      # out of budget, keep whatever arrived
+            timed_out = sum(1 for f in futures if not f.done())
+        finally:
+            # Not waiting on stragglers: the deadline is the point, and their
+            # http calls are already bounded in sources/base.py.
+            pool.shutdown(wait=False, cancel_futures=True)
+        if timed_out:
+            log.warning("%d of %d sources did not answer inside the %ds budget",
+                        timed_out, len(work), cfg.source_budget_seconds)
+
+    # Whatever the posting published about who to contact, captured now while we
+    # still have the full text.
+    for job in raw_jobs:
+        if not job.contacts:
+            job.contacts = [
+                c.to_dict() for c in extract_contacts(
+                    job.description,
+                    poster=job.raw.get("poster"),
+                    poster_platform=job.raw.get("platform"),
+                )
+            ]
 
     keep, reasons = [], Counter()
     for job, dropped in prefilter(raw_jobs, cfg, title_filter):
@@ -122,8 +150,8 @@ def stage_source(cfg: Config, store: Store) -> dict:
 
     new, dup = store.upsert_jobs(keep)
     return {
-        "boards": len(work),
-        "boards_timed_out": timed_out,
+        "sources": len(work),
+        "sources_timed_out": timed_out,
         "fetched": len(raw_jobs),
         "passed_filters": len(keep),
         "new": new,

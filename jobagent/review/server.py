@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 
 def _decode(row) -> dict:
     data = dict(row)
-    for key in ("strengths", "gaps", "red_flags"):
+    for key in ("strengths", "gaps", "red_flags", "contacts"):
         try:
             data[key] = json.loads(data.get(key) or "[]")
         except (ValueError, TypeError):

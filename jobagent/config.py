@@ -154,6 +154,31 @@ class Config:
         """Optional shell template containing {url}, for Agent Reach or similar."""
         return self.raw.get("sources", {}).get("reader_command")
 
+    @property
+    def social_hackernews(self) -> bool:
+        return bool(self.raw.get("sources", {}).get("hackernews", True))
+
+    @property
+    def social_reddit(self) -> bool:
+        return bool(self.raw.get("sources", {}).get("reddit", True))
+
+    @property
+    def social_subreddits(self) -> list[str]:
+        return self.raw.get("sources", {}).get("subreddits") or None
+
+    @property
+    def social_max_age_days(self) -> int:
+        """Hiring posts stay useful longer than a req, and the HN thread is monthly."""
+        return int(self.raw.get("sources", {}).get("social_max_age_days", 35))
+
+    @property
+    def social_command(self) -> str | None:
+        return self.raw.get("sources", {}).get("social_command")
+
+    @property
+    def social_queries(self) -> list[str]:
+        return self.raw.get("sources", {}).get("social_queries") or []
+
     # --- llm ---
     @property
     def model(self) -> str:

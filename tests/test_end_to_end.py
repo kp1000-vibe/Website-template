@@ -28,6 +28,8 @@ def make_cfg(tmp_path) -> Config:
                        "seniority_allow": ["mid", "senior", "principal", "group", "director"],
                        "source_budget_seconds": 30,
                        "locations_allow": ["San Francisco", "New York", "Remote"]},
+            # off by default in tests: they would reach the live network
+            "sources": {"hackernews": False, "reddit": False},
             "llm": {"model": "claude-opus-5", "max_scored_per_run": 50},
             "documents": {"cover_letter": True},
             "browser": {}, "review": {"port": 8765},
@@ -249,3 +251,35 @@ def test_resume_cache_handles_non_ascii(tmp_path, monkeypatch):
     assert "café" in text
     # second call comes from the cache file, which is where the encoding bug bit
     assert resume_mod.load(src, tmp_path / "cache") == text
+
+
+def test_a_hiring_post_reaches_the_queue_with_its_contact(wired, monkeypatch):
+    """The point of the social sources: the shortlist names a person to write to,
+    which a job board req never does."""
+    from jobagent.sources import social
+    from tests.test_social import HN_STORY, HN_THREAD
+
+    cfg, store = wired
+    cfg.raw["sources"] = {"hackernews": True, "reddit": False}
+    cfg.raw["search"]["min_score"] = 20      # the offline heuristic scores low
+    cfg.boards = {}
+
+    def fake(url, params=None, retries=1):
+        return HN_STORY if "search_by_date" in url else HN_THREAD
+
+    monkeypatch.setattr(social, "get_json", fake)
+
+    result = pipeline.stage_source(cfg, store)
+    assert result["new"] == 1
+
+    pipeline.stage_score(cfg, store, offline=True)
+    pipeline.stage_queue(cfg, store)
+    row = store.queue([QUEUED])[0]
+
+    import json
+    contacts = json.loads(row["contacts"])
+    assert contacts[0]["value"] == "jane.mcleod@acmepay.com"
+    assert contacts[0]["confidence"] == "invited"    # "Email me at" is an invitation
+    assert row["company"] == "Acme Pay"
+    # header parsed into fields, not run together with the body
+    assert row["title"] == "Senior Product Manager, Platform"

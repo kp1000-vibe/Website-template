@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     posted_at     TEXT,
     remote        INTEGER,
     ats           TEXT,
+    contacts      TEXT,
     first_seen_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS jobs_company ON jobs(company);
@@ -69,7 +70,15 @@ class Store:
         self.conn = sqlite3.connect(path)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(SCHEMA)
+        self._migrate()
         self.conn.commit()
+
+    def _migrate(self) -> None:
+        """Add columns that later versions introduced, for databases already on disk."""
+        existing = {r["name"] for r in self.conn.execute("PRAGMA table_info(jobs)")}
+        for column, ddl in [("contacts", "ALTER TABLE jobs ADD COLUMN contacts TEXT")]:
+            if column not in existing:
+                self.conn.execute(ddl)
 
     def close(self) -> None:
         self.conn.close()
@@ -89,9 +98,11 @@ class Store:
             try:
                 self.conn.execute(
                     """INSERT INTO jobs (id, source, external_id, company, title, location,
-                                         url, description, posted_at, remote, ats, first_seen_at)
+                                         url, description, posted_at, remote, ats,
+                                         contacts, first_seen_at)
                        VALUES (:id, :source, :external_id, :company, :title, :location,
-                               :url, :description, :posted_at, :remote, :ats, :first_seen_at)""",
+                               :url, :description, :posted_at, :remote, :ats,
+                               :contacts, :first_seen_at)""",
                     row,
                 )
                 new += 1

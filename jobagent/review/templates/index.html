@@ -35,6 +35,13 @@
              letter-spacing:.06em; color:var(--muted); font-weight:600; }
   ul { margin:0; padding-left:18px; } li { margin:2px 0; }
   .flags li { color:var(--bad); }
+  .contacts { list-style:none; padding:0; }
+  .contacts li { margin:3px 0; font-size:13px; }
+  .conf { font-size:10px; text-transform:uppercase; letter-spacing:.06em;
+          padding:1px 6px; border-radius:20px; margin-left:6px; }
+  .conf-stated { background:var(--good); color:#fff; }
+  .conf-invited { background:var(--accent); color:#fff; }
+  .conf-weak { border:1px solid var(--line); color:var(--muted); }
   .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;
              padding-top:14px; border-top:1px solid var(--line); }
   button, .btn { font:inherit; font-size:13px; padding:7px 13px; border-radius:7px;
@@ -104,6 +111,19 @@
     {% if job.red_flags %}
       <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Red flags</h4>
       <ul class="flags">{% for f in job.red_flags %}<li>{{ f }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    {% if job.contacts %}
+      <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:12px">Who to contact</h4>
+      <ul class="contacts">
+        {% for c in job.contacts %}
+          <li>
+            <b>{{ c.value }}</b>
+            <span style="color:var(--muted)">{{ c.kind }} &middot; {{ c.why }}</span>
+            <span class="conf conf-{{ c.confidence }}">{{ c.confidence }}</span>
+          </li>
+        {% endfor %}
+      </ul>
     {% endif %}
 
     {% if job.artifacts %}

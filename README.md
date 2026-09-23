@@ -244,6 +244,46 @@ Workday and iCIMS have no public feed. Put those postings in
 Workday forms are a react application with a multi step wizard, so expect the
 filler to get the first page and leave you the rest.
 
+### Jobs posted by people, not by portals
+
+A req on a job board tells you a company is hiring. A post that says "my team is
+hiring a platform PM, email me" tells you the company, the role, who owns it, and
+that they want to hear from you. One reply to that beats ten applications into a
+portal, so two sources that need no account are on by default:
+
+| source | what it reads | account |
+| --- | --- | --- |
+| `hackernews` | the monthly "Ask HN: Who is hiring?" thread | none |
+| `reddit` | public json on the hiring subreddits | none |
+
+X needs cookies and LinkedIn has no open search, so neither is faked. Point
+`sources.social_command` at whatever you have, including an
+[Agent Reach](https://github.com/Panniantong/Agent-Reach) install. It gets
+`{query}` substituted and must print a json list of
+`{id, author, text, url, created_at}`.
+
+These posts also age differently: a req is stale in three days, but the Hacker
+News thread only comes round monthly, so they get their own window via
+`sources.social_max_age_days`.
+
+### Who to contact
+
+Every posting is scanned for a contact and the result is shown on the dashboard
+and written into each job's `brief.md`, ranked by how directly you can reach the
+person:
+
+| confidence | means |
+| --- | --- |
+| `stated` | the posting names them outright, e.g. "you will report to Priya Raman" |
+| `invited` | the poster said they are hiring and gave a way to reach them |
+| `weak` | a handle or name mentioned in passing, check before using |
+
+Two rules make this trustworthy rather than a guessing machine. **Only what the
+posting itself published** is captured: no profile is looked up, and a name is
+never inferred from a company plus a job title. And **queue addresses are
+dropped**, since writing to `careers@` is applying through the portal by another
+name.
+
 ### Reading the pages that block you
 
 LinkedIn, Workday, Indeed and Glassdoor all refuse a plain http request: a login
@@ -287,7 +327,7 @@ depends on it.
 python -m pytest tests -q
 ```
 
-62 tests covering the title, seniority and location filters, the store dedup, the daily
+83 tests covering the title, seniority and location filters, the store dedup, the daily
 pick, every source parser, the field matching rules, and the filler driven
 against a fake page. The filler tests are the ones to keep green: they assert
 that sponsorship and work authorization are answered correctly, and that

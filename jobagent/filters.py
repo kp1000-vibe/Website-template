@@ -196,6 +196,17 @@ def company_ok(job: Job, blocked: list[str]) -> bool:
     return not any(b in company for b in blocked)
 
 
+# A req goes stale in days. A hiring post does not, and the Hacker News thread
+# only comes round once a month, so these sources get their own window.
+LONG_LIVED_SOURCES = {"hackernews", "reddit", "social", "manual"}
+
+
+def max_age_for(job: Job, cfg) -> int:
+    if job.source in LONG_LIVED_SOURCES:
+        return max(cfg.max_age_days, cfg.social_max_age_days)
+    return cfg.max_age_days
+
+
 def prefilter(jobs, cfg, title_filter: TitleFilter, now=None):
     """Yield (job, reason_dropped or None) so the caller can report the funnel."""
     for job in jobs:
@@ -203,7 +214,7 @@ def prefilter(jobs, cfg, title_filter: TitleFilter, now=None):
             yield job, "title"
         elif not seniority_ok(job.title, cfg.seniority_allow):
             yield job, "seniority"
-        elif not is_fresh(job, cfg.max_age_days, now):
+        elif not is_fresh(job, max_age_for(job, cfg), now):
             yield job, "stale"
         elif not company_ok(job, cfg.companies_block):
             yield job, "blocked company"

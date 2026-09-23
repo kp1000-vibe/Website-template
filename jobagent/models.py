@@ -26,6 +26,8 @@ class Job:
     posted_at: datetime | None = None
     remote: bool | None = None
     ats: str = ""        # which applicant tracking system hosts the form
+    # People the posting itself names, for sources that publish one. See contacts.py.
+    contacts: list[dict[str, Any]] = field(default_factory=list)
     raw: dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -43,9 +45,12 @@ class Job:
         return (now - posted).total_seconds() / 86400.0
 
     def to_row(self) -> dict[str, Any]:
+        import json
+
         d = asdict(self)
         d.pop("raw", None)
         d["posted_at"] = self.posted_at.isoformat() if self.posted_at else None
+        d["contacts"] = json.dumps(self.contacts) if self.contacts else None
         d["id"] = self.id
         return d
 

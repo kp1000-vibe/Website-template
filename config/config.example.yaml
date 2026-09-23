@@ -54,6 +54,21 @@ sources:
   #   reader_command: "curl -s https://r.jina.ai/{url}"
   reader_command: null
 
+  # Posts written by a person rather than an applicant tracking system. Lower
+  # volume, but they name who to talk to, which a job req never does.
+  hackernews: true          # the monthly "Ask HN: Who is hiring?" thread
+  reddit: true              # public json, no account needed
+  subreddits: ["ProductManagement", "forhire", "remotejs", "RemoteJobs"]
+  social_max_age_days: 35   # the HN thread is monthly, so these live longer
+
+  # X needs cookies and LinkedIn has no open search, so neither is faked here.
+  # Point this at an Agent Reach install or any command that prints a json list
+  # of {id, author, text, url, created_at}. {query} is substituted.
+  social_command: null
+  social_queries:
+    - "hiring senior product manager platform"
+    - "my team is hiring product manager"
+
 llm:
   model: claude-opus-5
   max_scored_per_run: 80   # cap so a bad day cannot run up a bill
